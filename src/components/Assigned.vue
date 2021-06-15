@@ -6,18 +6,19 @@
     <div >  
     <base-card>
     <q-item         
-          v-for="ass in assignments"
-          v-if="ass.status=='assigned'"
-          :key="ass.id"
+          v-for="ass in commandes"
+          v-if="ass.etatLivraison=='Non Livrer'"
+          :key="ass._id"
           class="col"
           clickable
           dense
-          @click="showInfos()"
+          @click="show_dialog = true;
+                  productToShow = ass.produits;"
           :style="styles" 
           >
         <q-item-section side top>
             <q-circular-progress
-              :value="ass.value"
+              :value="value"
               size="30px"
               :thickness="0.22"
               color="orange"
@@ -27,7 +28,7 @@
         </q-item-section>
 
         <q-item-section 
-           v-if="ass.dueDate"
+           v-if="ass.dateLivraison"
            side>
           <div class="row">
     	     	<div class="column justify-center">
@@ -40,12 +41,12 @@
             <q-item-label 
           	class="row justify-end"
           	caption>
-          	{{ ass.dueDate }}
+          	<span><b> {{ ass.dateLivraison.slice(0,15) }} </b></span>
             </q-item-label>
             <q-item-label
           	class="row justify-end"
           	caption>
-          	<small>{{ ass.dueTime }}</small>
+          	<span><small>{{ ass.dateLivraison.slice(16,24) }}</small></span>
           </q-item-label>
 	       	</div>
     	</div>
@@ -53,16 +54,22 @@
     <q-item-section >
           <div class="row">
 	    	    <div class="column">
-            <q-item-label 
-          	class="row justify-end"
-          	>
-           <b>{{ ass.adress }}</b>
-            </q-item-label>
+        
             <q-item-label
           	class="row justify-end"
             caption
           	>
-          <b>	{{ ass.payment }} </b>
+          <q-btn
+           style="background: green; color: white"
+            icon-right="person"
+            label="Client"
+            no-caps 
+            dense
+            glossy
+            @click.stop="client_dialog=true;
+                        client = ass.client;"
+            />
+           </q-btn>
             </q-item-label>
 	       	</div>
     	</div>
@@ -70,8 +77,8 @@
 
           <q-item-section side>
             <q-btn
-              v-show="ass.value===75"
-              @click.stop="promptDeliver(ass.id)"
+              @click.stop="confirm_dialog=true;
+                        comm = ass;"
               icon="local_shipping"
               dense
               round
@@ -79,8 +86,17 @@
               :style="style"
               no-caps>
             </q-btn>
-
+            <q-space/>
             <q-btn
+            style="background: goldenrod; color: white"
+            icon="attach_money" 
+            dense
+            glossy
+            @click.stop="money_dialog=true;
+                        money = ass._id;"
+            round/>
+           </q-btn>
+           <!-- <q-btn
               v-show="ass.value===50"
               @click.stop="promptPick(ass.id)"
               icon="local_laundry_service"
@@ -89,14 +105,31 @@
               outline           
               :style="style"
               no-caps>
-            </q-btn>
+            </q-btn>-->
             
           </q-item-section>
         </q-item>
         </base-card>
     </div>
-    <q-dialog v-if="infosDialog" v-model="infosDialog" >
-      <cloth-infos :ass="assignments"/>
+    <q-dialog v-if="show_dialog" v-model="show_dialog" >
+      <cloth-infos :produit="productToShow"
+        @closeDialog="show_dialog = false"
+        />
+    </q-dialog>
+    <q-dialog v-if="money_dialog" v-model="money_dialog" >
+      <money-infos :Money="money"
+        @closeDialog="money_dialog = false"
+        />
+    </q-dialog>
+        <q-dialog v-if="client_dialog" v-model="client_dialog" >
+          <client-infos :Client="client"
+        @closeDialog="client_dialog = false"
+        />
+    </q-dialog>
+    <q-dialog v-if="confirm_dialog" v-model="confirm_dialog" >
+          <comm-infos :Comm="comm"
+        @closeDialog="confirm_dialog = false"
+        />
     </q-dialog>
     </q-list>
     
@@ -105,8 +138,14 @@
 <script>
 import BaseCard from 'components/UI/BaseCard.vue';
 import ClothInfos from 'components/ClothInfos.vue';
+import MoneyInfos from 'components/MoneyInfos.vue';
+import ClientInfos from 'components/ClientInfos.vue';
+import CommInfos from 'components/CommInfos.vue';
 export default {
-  components: { ClothInfos },
+  
+  components: { 
+    'base-card' : require('components/UI/BaseCard.vue').default,
+    ClothInfos, MoneyInfos, ClientInfos, CommInfos },
 	created() {
 		this.dark = this.$q.dark.isActive;
 	},
@@ -120,7 +159,21 @@ export default {
       selectedTab:"",
       dark: null,
       value:75,
-      infosDialog: false,
+      dat:null,
+      show_dialog: false,
+      money_dialog:false,
+      client_dialog:false,
+      confirm_dialog:false,
+      comm: [],
+      client: null,
+      money:null,
+      commandeCopy:{},
+      productToShow: null,
+      commandes: [],
+      NomClients: [],
+      PrenomClients: [],
+      VilleClients: [],
+      
       
       assignments:[
         {
@@ -155,10 +208,7 @@ export default {
       ]
       };
   },
-  components: {
-      'base-card' : require('components/UI/BaseCard.vue').default,
-      'cloth-infos' : require('components/ClothInfos.vue').defaultClothInfos
-    },
+  
     methods:{
       showInfos() {
       this.infosDialog = true;
@@ -172,27 +222,7 @@ export default {
     router(){
       this.$router.push('/clothinfos');
     },
-    deliver(id){
-      for (let index = 0; index < this.assignments.length; index++) {
-        const element = this.assignments[index];
-        if (element.id==id) {
-          element.status='completed';
-          
-        }
-        
-      }
-    },
-    pick(id){
-      for (let index = 0; index < this.assignments.length; index++) {
-        const element = this.assignments[index];
-        if (element.id==id) {
-          element.value=75;
-          
-        }
-        
-      }
-    },
-    promptDeliver(id) {
+    promptDeliver(x) {
         this.$q.dialog({
           title: this.$t('confirm'),
           message: this.$t('deliver'),
@@ -204,26 +234,40 @@ export default {
           },
           persistent: true
         }).onOk(() => {
-          this.deliver(id);
+          this.onEdit(x);
         })
       },
-      promptPick(id) {
-        this.$q.dialog({
-          title: this.$t('confirm'),
-          message: this.$t('pick'),
-          ok: {
-            push: true
-          },
-          cancel: {
-            color: 'negative'
-          },
-          persistent: true
-        }).onOk(() => {
-          this.pick(id);
-        })
-      }
-
+      async getAll() {
+      let res = await this.$axios.get("/commande");
+      this.commandes = res.data;
+      console.log(this.commandes)
     },
+    async getAllNomClients() {
+      let res = await this.$axios.get("/client");
+      let NomClients = {};
+      res.data.forEach(el => {
+        NomClients[el._id] = el.nom;
+      });
+      this.NomClients = { ...NomClients };
+    },
+    async getAllPrenomClients() {
+      let res = await this.$axios.get("/client");
+      let PrenomClients = {};
+      res.data.forEach(el => {
+        PrenomClients[el._id] = el.prenom;
+      });
+      this.PrenomClients = { ...PrenomClients };
+    },
+    async getAllVilleClients() {
+      let res = await this.$axios.get("/client");
+      let VilleClients = {};
+      res.data.forEach(el => {
+        VilleClients[el._id] = el.ville;
+      });
+      this.VilleClients = { ...VilleClients };
+    },
+    },
+
     computed: {
     darkMode() {
       return this.$q.dark.isActive === 'true' ? null : 'dark';
@@ -245,6 +289,13 @@ export default {
       
       return {'color': '#FF0080'}
     }//linear-gradient(to right, #eecda3, #ef629f)
+    },
+    async created() {
+    await this.getAll();
+    await this.getAllNomClients();
+    await this.getAllPrenomClients();
+    await this.getAllVilleClients();
+    console.log(this.commandes);
     }
 }
 </script>
@@ -252,9 +303,14 @@ export default {
 base-card{
   box-shadow:none;
 }
+span{
+  font-family: monospace;
+  font-size: 12px;
+}
 .q-item{
   font-family: monospace;
   font-size: 11px;
+  height: 100px;
 }
 .dark{
   background-color: #edd2ff;

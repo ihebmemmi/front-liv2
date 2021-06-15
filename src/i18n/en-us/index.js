@@ -20,7 +20,7 @@ export default {
     road: "Road:",
     code: "Zip code:",
     pick: "Are you sure that you picked this order ?",
-    deliver: "Are you sure that you delivered this order ?",
+    deliver: "Are you sure that this order is delivered and payed ?",
     confirm: "Confirm"
 
 

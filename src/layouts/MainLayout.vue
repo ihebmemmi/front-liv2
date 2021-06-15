@@ -6,7 +6,11 @@
         <q-toolbar-title class="toolbar-title">
           Le Pressing
         </q-toolbar-title>
-
+<q-item-label 
+          	class="row justify-end"
+          	>
+           <span><b>{{ VilleClients[ass.client] }}</b></span>
+            </q-item-label>
       </q-toolbar>
     </q-header>
 

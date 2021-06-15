@@ -1,37 +1,17 @@
 <template>
   <q-card class="mydialog">
     <q-form class="q-pa-md" @reset="onCancel" ref="myForm">
-      <q-input
-        dense
-        outlined
-        color="secondary"
-        v-model="userdataCopy.imageUrl"
-        class="q-mb-md w"
-      >
-        <template v-slot:prepend>
-          <div class="row items-center all-pointer-events">
-            <q-icon
-              class="q-mr-xs"
-              color="secondary"
-              size="20px"
-              name="image"
-            />
-            <span>Image Url</span>
-          </div>
-        </template>
-      </q-input>
 
       <q-space/>
 
       <q-input
         class="w"
         dense
+        readonly
         outlined
         color="secondary"
-        v-model="userdataCopy.nom"
+        v-model="clientdata.nom"
         :label="$t('name')"
-        lazy-rules
-        :rules="[val => (val && val.length > 0) || 'Champ vide*']"
       >
         <template v-slot:prepend>
           <div class="row items-center all-pointer-events">
@@ -47,12 +27,11 @@
       <q-input
         class="w"
         dense
+        readonly
         outlined
         color="secondary"
-        v-model="userdataCopy.prenom"
+        v-model="clientdata.prenom"
         :label="$t('first')"
-        lazy-rules
-        :rules="[val => (val && val.length > 0) || 'Champs vide*']"
       >
         <template v-slot:prepend>
           <div class="row items-center all-pointer-events">
@@ -68,13 +47,12 @@
       <q-input
         class="w"
         dense
+        readonly
         outlined
         color="secondary"
-        v-model="userdataCopy.date_naissance"
+        v-model="clientdata.date_naissance"
         type="date"
         :label="$t('birth')"
-        lazy-rules
-        :rules="[val => (val && val.length > 0) || 'Champs vide*']"
       >
         <template v-slot:prepend>
           <div class="row items-center all-pointer-events">
@@ -89,31 +67,31 @@
       </q-input>
       <!-- date -->
 
-      <q-select
+      <q-input
         :label="$t('gender')"
         dense
         class="w"
         outlined
+        readonly
         color="secondary"
-        v-model="userdataCopy.genre"
-        :options="genreOptions"
+        v-model="clientdata.genre"
       >
         <template v-slot:prepend>
           <div class="row items-center all-pointer-events">
             <q-icon class="q-mr-xs" color="secondary" size="20px" name="wc" />
           </div>
         </template>
-      </q-select>
+      </q-input>
       <br />
       <label class="title"> {{ $t('adress') }}</label>
       <q-input
         class="w"
         dense
+        readonly
         outlined
         color="secondary"
         type="string"
-        :offset="[0, 8]"
-        v-model="userdataCopy.ville"
+        v-model="clientdata.ville"
         label=""
       >
         <template v-slot:label>
@@ -128,10 +106,10 @@
         class="w"
         dense
         outlined
+        readonly
         color="secondary"
         type="string"
-        :offset="[0, 8]"
-        v-model="userdataCopy.rue"
+        v-model="clientdata.rue"
         label=""
       >
         <template v-slot:label>
@@ -145,11 +123,11 @@
       <q-input
         class="w"
         dense
+        readonly
         outlined
         color="secondary"
         type="string"
-        :offset="[0, 8]"
-        v-model="userdataCopy.code_postal"
+        v-model="clientdata.code_postal"
         label=""
       >
         <template v-slot:label>
@@ -164,13 +142,12 @@
       <q-input
         class="w"
         dense
+        readonly
         outlined
         color="secondary"
         type="mail"
-        :offset="[0, 8]"
-        :hint="$t('nah')"
         readonly
-        v-model="userdataCopy.email"
+        v-model="clientdata.email"
         label=""
       >
         <template v-slot:label>
@@ -185,13 +162,12 @@
         class="w"
         dense
         outlined
+        readonly
         color="secondary"
         mask="## ### ###"
         unmasked-value
-        v-model="userdataCopy.telephone"
+        v-model="clientdata.telephone"
         label=""
-        lazy-rules
-        :rules="[val => (val && val.length === 8) || 'Champs vide*']"
       >
         <template v-slot:label>
           <div class="row items-center all-pointer-events">
@@ -206,40 +182,10 @@
           </div>
         </template>
       </q-input>
-      <q-input
-        class="w"
-        dense
-        :label="$t('status')"
-        :hint="$t('no')"
-        outlined
-        readonly
-        color="secondary"
-        v-model="userdataCopy.etat"
-        :options="etatOptions"
-      >
-        <template v-slot:prepend>
-              <div class="row items-center all-pointer-events">
-                <q-icon
-                  class="q-mr-xs"
-                  color="gray"
-                  size="20px"
-                  name="published_with_changes"
-                />
-              </div>
-            </template>
-      </q-input>
       <br />
       <div>
         <q-btn
-          :label="$t('edit')"
-          outline
-          no-caps 
-          glossy
-          @click="onEdit()"
-          class="q-mr-md"
-          color="positive"
-        />
-        <q-btn
+         @click="closeDialog()"
          :label="$t('cancel')"
          outline
          no-caps
@@ -250,74 +196,79 @@
     </q-form>
   </q-card>
 </template>
-
 <script>
 export default {
-  props: ["userdata"],
+  props: ["Client"],
   data() {
     return {
-      genreOptions: ["Homme", "Femme"],
-      etatOptions: ["Actif", "Inactif"],
-
-      userdataCopy: {}
+      clientdata:[],
+      id:null
     };
   },
 
   methods: {
-    async onEdit() {
-      //  this.$refs.myForm.validate().then(async success => {
-      ////    if (success) {
-      ////    let res = await this.$axios.post(`/client/`, {
-      //...this.clientCopy
-      //  });
-      //  console.log(res);
-      //   }
-      //});
-      //} else {
-      this.$refs.myForm.validate().then(async success => {
-        if (success) {
-          let res = await this.$axios.patch(
-            `/livreur/update/${this.userdata._id}`,
-            {
-              ...this.userdataCopy
-            }
-          );
-          window.location.reload(true);
-
-          this.$emit("updated");
-
-          //this.getAll();
-        }
-      });
+    closeDialog() {
+      this.$emit("closeDialog");
     },
     onCancel() {
       // this.$router.push("/client");
-    }
+    },
+    async getClientData() {
+      this.id=this.Client;
+      let res = await this.$axios.get(`/client/${this.id}`);
+      this.clientdata = res.data;
+      console.log(this.clientdata);
+    },
   },
-  mounted() {
-    this.userdataCopy = { ...this.userdata };
-  }
+  async created() {
+    this.getClientData();
+  },
+  closeDialog() {
+      this.$emit("closeDialog");
+    }
 };
 </script>
-<style>
-.mydialog {
-  width: 350px;
-  padding: 20px;
-  height: 500px;
+<style scoped>
+.profilcard{
+  display: block;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  padding: 1rem;
+  margin: 2rem auto;
+  height: fit-content;
+  width: 100%;
+  max-width: 350px
 }
 .w{
   width:fit-content;
   font-family: monospace;
   font-size: 11px;
 }
-.title{
+.s{
   font-family: monospace;
   font-size: 11px;
-  font-weight: bold;
 }
-span{
+.hi{
   font-family: monospace;
-  font-size: 11px;
+   font-weight:bold;
+   visibility: hidden;
+}
+.text1 {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: bolder;
+  width: fit-content;
+}
 
+.image {
+  max-width: 270px;
+  border: 5px solid #0d1647;
+}
+.poseimg{
+  position: absolute;
+  top:0;
+  right: 0px;
+  width: 10px;
+  height: 10px;
 }
 </style>
